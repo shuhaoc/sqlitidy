@@ -1,4 +1,4 @@
-// sqlitidy.cpp : 定义控制台应用程序的入口点。
+// test.cpp : 定义控制台应用程序的入口点。
 //
 
 #include "stdafx.h"
@@ -21,15 +21,15 @@ struct User {
 	static const array<string, 3> fieldNames;
 
 	SQLITIDY_VALUE_GETTER_BEGIN
-		SQLITIDY_VALUE_GETTER(id)
-		SQLITIDY_VALUE_GETTER(name)
-		SQLITIDY_VALUE_GETTER(age)
+	SQLITIDY_VALUE_GETTER(id)
+	SQLITIDY_VALUE_GETTER(name)
+	SQLITIDY_VALUE_GETTER(age)
 	SQLITIDY_VALUE_GETTER_END
 
 	SQLITIDY_VALUE_SETTER_BEGIN
-		SQLITIDY_INT_VALUE_SETTER(id)
-		SQLITIDY_STRING_VALUE_SETTER(name)
-		SQLITIDY_INT_VALUE_SETTER(age)
+	SQLITIDY_INT_VALUE_SETTER(id)
+	SQLITIDY_STRING_VALUE_SETTER(name)
+	SQLITIDY_INT_VALUE_SETTER(age)
 	SQLITIDY_VALUE_SETTER_END
 
 	User() : id(-1), age(-1) { }
@@ -51,7 +51,7 @@ template <typename Container> void deleteContainer(const Container& container) {
 	}
 }
 
-int _tmain(int argc, _TCHAR* argv[]) {
+int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 	DbContext ctx("test.db");
 	//User u;
 	//cin >> u.id >> u.name >> u.age;
@@ -60,7 +60,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	//User u2;
 	//ctx.load(u.id, u2);
 	//cout << u2.id << u2.name << u2.age << endl;
-	array<DbValue, 1> p1 = { 14 };
+	//array<DbValue, 1> p1 = { 14 };
 	vector<User*> ul;
 	//ctx.where("id > ?", p1, ul);
 	//ctx.where("id > 10", ul);

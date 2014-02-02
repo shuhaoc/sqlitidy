@@ -7,6 +7,7 @@
 #include <cassert>
 #include <sqlite3.h>
 
+
 namespace sqlitidy {
 
 struct DbValue {
@@ -18,17 +19,28 @@ struct DbValue {
 		char* stringValue;
 	};
 
-	DbValue(const DbValue& value) { assign(value); }
+	DbValue(const DbValue& value) {
+		assign(value);
+	}
 
-	DbValue& operator = (const DbValue& value) { assign(value); return *this; }
+	DbValue& operator = (const DbValue& value) {
+		assign(value);
+		return *this;
+	}
 
-	~DbValue() { if (type == SQLITE_TEXT) delete[] stringValue; }
+	~DbValue() {
+		if (type == SQLITE_TEXT) delete[] stringValue;
+	}
 
 	DbValue() : type(SQLITE_NULL), nullValue(nullptr) { }
 
 	DbValue(int intValue) : type(SQLITE_INTEGER), intValue(intValue) { }
 
-	DbValue(const std::string& stringValue);
+	DbValue(const std::string& stringValue) : type(SQLITE_TEXT) {
+		unsigned len = stringValue.size() + 1;
+		this->stringValue = new char[len];
+		strcpy(this->stringValue, stringValue.c_str());
+	}
 
 private:
 	void assign(const DbValue& value);
@@ -199,7 +211,7 @@ template <typename ObjectT, unsigned ParamCount> void DbContext::where(
 }
 
 template <typename ObjectT> void DbContext::where(
-    const std::string& clause, std::vector<ObjectT*>& list) {
+		const std::string& clause, std::vector<ObjectT*>& list) {
 	where(clause, std::array<DbValue, 0>(), list);
 }
 

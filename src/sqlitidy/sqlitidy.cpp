@@ -1,6 +1,13 @@
+#include "stdafx.h"
 #include "sqlitidy.h"
 
 namespace sqlitidy {
+
+DbValue::DbValue(const std::string& stringValue) : type(SQLITE_TEXT) {
+	unsigned len = stringValue.size() + 1;
+	this->stringValue = new char[len];
+	strcpy(this->stringValue, stringValue.c_str());
+}
 
 void DbValue::assign(const DbValue& value) {
 	assert(type == value.type);
