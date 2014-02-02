@@ -24,7 +24,7 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="sqlitidy.h">
+    <ClInclude Include="..\..\include\sqlitidy.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

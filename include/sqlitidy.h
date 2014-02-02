@@ -7,7 +7,6 @@
 #include <cassert>
 #include <sqlite3.h>
 
-
 namespace sqlitidy {
 
 struct DbValue {
@@ -19,28 +18,17 @@ struct DbValue {
 		char* stringValue;
 	};
 
-	DbValue(const DbValue& value) {
-		assign(value);
-	}
+	DbValue(const DbValue& value) { assign(value); }
 
-	DbValue& operator = (const DbValue& value) {
-		assign(value);
-		return *this;
-	}
+	DbValue& operator = (const DbValue& value) { assign(value); return *this; }
 
-	~DbValue() {
-		if (type == SQLITE_TEXT) delete[] stringValue;
-	}
+	~DbValue() { if (type == SQLITE_TEXT) delete[] stringValue; }
 
 	DbValue() : type(SQLITE_NULL), nullValue(nullptr) { }
 
 	DbValue(int intValue) : type(SQLITE_INTEGER), intValue(intValue) { }
 
-	DbValue(const std::string& stringValue) : type(SQLITE_TEXT) {
-		unsigned len = stringValue.size() + 1;
-		this->stringValue = new char[len];
-		strcpy(this->stringValue, stringValue.c_str());
-	}
+	DbValue(const std::string& stringValue);
 
 private:
 	void assign(const DbValue& value);
@@ -52,6 +40,10 @@ public:
 
 	~DbContext();
 
+	template <typename ObjectT> void createTable();
+
+	template <typename ObjectT> bool isTableExist();
+
 	template <typename ObjectT> bool isExist(ObjectT& object);
 
 	template <typename ObjectT> void save(ObjectT& object);
@@ -60,11 +52,10 @@ public:
 
 	template <typename ObjectT> void all(std::vector<ObjectT*>& list);
 
-	template <typename ObjectT, unsigned ParamCount> void where(const std::string& clause,
-	        const std::array<DbValue, ParamCount>& parameters, std::vector<ObjectT*>& list);
+	template <typename ObjectT, unsigned ParamCount> void where(
+		const std::string& clause, const std::array<DbValue, ParamCount>& parameters, std::vector<ObjectT*>& list);
 
-	template <typename ObjectT> void where(const std::string& clause,
-	                                       std::vector<ObjectT*>& list);
+	template <typename ObjectT> void where(const std::string& clause, std::vector<ObjectT*>& list);
 
 private:
 	sqlite3_stmt* compile(const std::string& sql);
@@ -101,7 +92,7 @@ private:
 template <typename ObjectT> bool DbContext::isExist(ObjectT& object) {
 	assert(db);
 
-	std::stringstream sql;
+	std::ostringstream sql;
 	sql << "select count(" << ObjectT::keyName << ") from " << ObjectT::tableName
 	    << " where " << ObjectT::keyName << " = ?;";
 
@@ -194,7 +185,7 @@ template <typename ObjectT> void DbContext::extractList(sqlite3_stmt* stmt, std:
 }
 
 template <typename ObjectT, unsigned ParamCount> void DbContext::where(
-    const std::string& clause, const std::array<DbValue, ParamCount>& parameters, std::vector<ObjectT*>& list) {
+		const std::string& clause, const std::array<DbValue, ParamCount>& parameters, std::vector<ObjectT*>& list) {
 	assert(db);
 
 	std::ostringstream sql;
@@ -210,8 +201,7 @@ template <typename ObjectT, unsigned ParamCount> void DbContext::where(
 	::sqlite3_finalize(stmt);
 }
 
-template <typename ObjectT> void DbContext::where(
-		const std::string& clause, std::vector<ObjectT*>& list) {
+template <typename ObjectT> void DbContext::where(const std::string& clause, std::vector<ObjectT*>& list) {
 	where(clause, std::array<DbValue, 0>(), list);
 }
 
@@ -225,6 +215,57 @@ template <typename ObjectT> void DbContext::all(std::vector<ObjectT*>& list) {
 	extractList(stmt, list);
 
 	::sqlite3_finalize(stmt);
+}
+
+template <typename ObjectT> void DbContext::createTable() {
+	assert(db);
+
+	std::ostringstream sql;
+	sql << "create table " << ObjectT::tableName << " (";
+
+	ObjectT placeholder;
+	for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
+		sql << ObjectT::fieldNames[i];
+		DbValue value = placeholder.getValue(ObjectT::fieldNames[i]);
+		switch (value.type) {
+		case SQLITE_INTEGER: sql << " integer"; break;
+		case SQLITE_TEXT: sql << " text"; break;
+		}
+		if (ObjectT::fieldNames[i] == ObjectT::keyName) {
+			sql << " primary key";
+#pragma warning(push)
+#pragma warning(disable: 4127)
+			if (ObjectT::pkAutoInc && value.type == SQLITE_INTEGER) {
+				sql << " autoincrement";
+			}
+#pragma warning(pop)
+		}
+		if (i != ObjectT::fieldNames.size() - 1) {
+			sql << ", ";
+		}
+	}
+
+	sql << ");";
+
+	sqlite3_stmt* stmt = compile(sql.str());
+	assert(step(stmt) == SQLITE_DONE);
+
+	::sqlite3_finalize(stmt);
+}
+
+template <typename ObjectT> bool DbContext::isTableExist() {
+	assert(db);
+
+	std::string sql = "select count(*) from sqlite_master where type = 'table' and name = ?;";
+
+	sqlite3_stmt* stmt = compile(sql);
+	bind(stmt, 1, ObjectT::tableName);
+	assert(step(stmt) == SQLITE_ROW);
+
+	int count = ::sqlite3_column_int(stmt, 1);
+
+	::sqlite3_finalize(stmt);
+	return count == 1;
 }
 
 } // namespace sqlitidy

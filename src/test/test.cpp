@@ -53,6 +53,9 @@ template <typename Container> void deleteContainer(const Container& container) {
 
 int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 	DbContext ctx("test.db");
+	if (!ctx.isTableExist<User>()) {
+		ctx.createTable<User>();
+	}
 	//User u;
 	//cin >> u.id >> u.name >> u.age;
 	//ctx.save(u);
