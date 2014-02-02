@@ -262,7 +262,7 @@ template <typename ObjectT> bool DbContext::isTableExist() {
 	bind(stmt, 1, ObjectT::tableName);
 	assert(step(stmt) == SQLITE_ROW);
 
-	int count = ::sqlite3_column_int(stmt, 1);
+	int count = ::sqlite3_column_int(stmt, 0);
 
 	::sqlite3_finalize(stmt);
 	return count == 1;
