@@ -71,11 +71,11 @@ private:
 	sqlite3* db;
 };
 
-#define SQLITIDY_VALUE_GETTER_BEGIN DbValue getValue(const string& name) const {
+#define SQLITIDY_VALUE_GETTER_BEGIN sqlitidy::DbValue getValue(const std::string& name) const {
 #define SQLITIDY_VALUE_GETTER(field) if (name == #field) { return this->field; }
-#define SQLITIDY_VALUE_GETTER_END return DbValue(); }
+#define SQLITIDY_VALUE_GETTER_END return sqlitidy::DbValue(); }
 
-#define SQLITIDY_VALUE_SETTER_BEGIN void setValue(const string& name, const DbValue& value) {
+#define SQLITIDY_VALUE_SETTER_BEGIN void setValue(const std::string& name, const sqlitidy::DbValue& value) {
 #define SQLITIDY_INT_VALUE_SETTER(field) if (name == #field) { \
 	assert(value.type == SQLITE_INTEGER); \
 	this->field = value.intValue; \
