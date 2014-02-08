@@ -75,6 +75,7 @@ int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 	for_each(ul.begin(), ul.end(), [] (User* u) {
 		cout << u->id << u->name << u->age << u->height << endl;
 	});
+	ctx.remove(u);
 	deleteContainer(ul);
 	return 0;
 }

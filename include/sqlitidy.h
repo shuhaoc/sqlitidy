@@ -55,6 +55,8 @@ public:
 
 	template <typename ObjectT> bool load(const DbValue& id, ObjectT& object);
 
+	template <typename ObjectT> void remove(ObjectT& object);
+
 	template <typename ObjectT> void all(std::vector<ObjectT*>& list);
 
 	template <typename ObjectT, unsigned ParamCount> void where(
@@ -181,6 +183,20 @@ template <typename ObjectT> bool DbContext::load(const DbValue& id, ObjectT& obj
 
 	::sqlite3_finalize(stmt);
 	return isExist;
+}
+
+template <typename ObjectT> void DbContext::remove(ObjectT& object) {
+	assert(db);
+
+	std::ostringstream sql;
+	sql << "delete from " << ObjectT::tableName
+	    << " where " << ObjectT::keyName << " = ?;";
+
+	sqlite3_stmt* stmt = compile(sql.str());
+	bind(stmt, 1, object.getValue(ObjectT::keyName));
+
+	assert(step(stmt) == SQLITE_DONE);
+	::sqlite3_finalize(stmt);
 }
 
 template <typename ObjectT> void DbContext::extractList(sqlite3_stmt* stmt, std::vector<ObjectT*>& list) {
