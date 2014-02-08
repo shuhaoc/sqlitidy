@@ -12,3 +12,4 @@ pdb/
 *.lib
 *.exp
 *.db
+!sqlite3.lib
