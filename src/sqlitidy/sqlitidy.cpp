@@ -15,6 +15,9 @@ void DbValue::assign(const DbValue& value) {
 	case SQLITE_INTEGER:
 		intValue = value.intValue;
 		break;
+	case SQLITE_FLOAT:
+		doubleValue = value.doubleValue;
+		break;
 	case SQLITE_TEXT: {
 		delete[] stringValue;
 		unsigned len = strlen(value.stringValue) + 1;
@@ -41,6 +44,9 @@ void DbContext::bind(sqlite3_stmt* stmt, int i, const DbValue& value) {
 	switch (value.type) {
 	case SQLITE_INTEGER:
 		ec = ::sqlite3_bind_int(stmt, i, value.intValue);
+		break;
+	case SQLITE_FLOAT:
+		ec = ::sqlite3_bind_double(stmt, i, value.doubleValue);
 		break;
 	case SQLITE_TEXT:
 		ec = ::sqlite3_bind_text(stmt, i, value.stringValue, strlen(value.stringValue), SQLITE_TRANSIENT);
@@ -72,6 +78,8 @@ DbValue DbContext::extract(sqlite3_stmt* stmt, int i) {
 	switch (type) {
 	case SQLITE_INTEGER:
 		return ::sqlite3_column_int(stmt, i);
+	case SQLITE_FLOAT:
+		return ::sqlite3_column_double(stmt, i);
 	case SQLITE_TEXT:
 		return reinterpret_cast<const char*>(::sqlite3_column_text(stmt, i));
 	default:
