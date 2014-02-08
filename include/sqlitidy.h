@@ -240,6 +240,7 @@ template <typename ObjectT> void DbContext::createTable() {
 			}
 #pragma warning(pop)
 		}
+		sql << " not null";
 		if (i != ObjectT::fieldNames.size() - 1) {
 			sql << ", ";
 		}
