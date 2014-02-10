@@ -51,7 +51,7 @@ public:
 
 	template <typename ObjectT> bool isExist(ObjectT& object);
 
-	template <typename ObjectT> void save(ObjectT& object);
+	template <typename ObjectT> bool save(ObjectT& object);
 
 	template <typename ObjectT> bool load(const DbValue& id, ObjectT& object);
 
@@ -117,7 +117,7 @@ template <typename ObjectT> bool DbContext::isExist(ObjectT& object) {
 	return count > 0;
 }
 
-template <typename ObjectT> void DbContext::save(ObjectT& object) {
+template <typename ObjectT> bool DbContext::save(ObjectT& object) {
 	assert(db);
 
 	bool isUpdating = isExist(object);
@@ -161,6 +161,8 @@ template <typename ObjectT> void DbContext::save(ObjectT& object) {
 	if (!isUpdating && key.type == SQLITE_INTEGER && ObjectT::pkAutoInc) {
 		object.setValue(ObjectT::keyName, DbValue(static_cast<int>(::sqlite3_last_insert_rowid(db))));
 	}
+
+	return isUpdating;
 }
 
 template <typename ObjectT> bool DbContext::load(const DbValue& id, ObjectT& object) {
