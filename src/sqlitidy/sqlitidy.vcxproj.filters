@@ -27,12 +27,21 @@
     <ClInclude Include="..\..\include\sqlitidy.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\db_value.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\db_object_traits.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="sqlitidy.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="db_value.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

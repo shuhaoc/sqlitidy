@@ -13,28 +13,6 @@ struct User {
 	int age;
 	double height;
 
-	static const string tableName;
-
-	static const string keyName;
-
-	static const bool pkAutoInc = true;
-
-	static const array<string, 4> fieldNames;
-
-	SQLITIDY_VALUE_GETTER_BEGIN
-	SQLITIDY_VALUE_GETTER(id)
-	SQLITIDY_VALUE_GETTER(name)
-	SQLITIDY_VALUE_GETTER(age)
-	SQLITIDY_VALUE_GETTER(height)
-	SQLITIDY_VALUE_GETTER_END
-
-	SQLITIDY_VALUE_SETTER_BEGIN
-	SQLITIDY_INT_VALUE_SETTER(id)
-	SQLITIDY_STRING_VALUE_SETTER(name)
-	SQLITIDY_INT_VALUE_SETTER(age)
-	SQLITIDY_DOUBLE_VALUE_SETTER(height)
-	SQLITIDY_VALUE_SETTER_END
-
 	User() : id(-1), age(-1), height(0) { }
 
 private:
@@ -42,11 +20,12 @@ private:
 	User& operator = (const User&);
 };
 
-const string User::tableName = "tb_user";
-
-const string User::keyName = "id";
-
-const array<string, 4> User::fieldNames = { "id", "name", "age", "height" };
+SQLITIDY_MAP_BEGIN(User, "tb_user", "id", true)
+	SQLITIDY_MAP_FIELD(id)
+	SQLITIDY_MAP_FIELD(name)
+	SQLITIDY_MAP_FIELD(age)
+	SQLITIDY_MAP_FIELD(height)
+SQLITIDY_MAP_END
 
 template <typename Container> void deleteContainer(const Container& container) {
 	for (auto i = container.begin(); i != container.end(); i++) {

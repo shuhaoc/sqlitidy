@@ -7,37 +7,13 @@
 #include <cassert>
 #include <sqlite3.h>
 
+#include "db_value.h"
+#include "db_object_traits.h"
+
 namespace sqlitidy {
 
 #pragma warning(push)
 #pragma warning(disable: 4127)
-
-struct DbValue {
-	int type;
-	union {
-		void* nullValue;
-		int intValue;
-		double doubleValue;
-		char* stringValue;
-	};
-
-	DbValue(const DbValue& value) { assign(value); }
-
-	DbValue& operator = (const DbValue& value) { assign(value); return *this; }
-
-	~DbValue() { if (type == SQLITE_TEXT) delete[] stringValue; }
-
-	DbValue() : type(SQLITE_NULL), nullValue(nullptr) { }
-
-	DbValue(int intValue) : type(SQLITE_INTEGER), intValue(intValue) { }
-
-	DbValue(double doubleValue) : type(SQLITE_FLOAT), doubleValue(doubleValue) { }
-
-	DbValue(const std::string& stringValue);
-
-private:
-	void assign(const DbValue& value);
-};
 
 class DbContext {
 public:
@@ -78,38 +54,18 @@ private:
 	sqlite3* db;
 };
 
-#define SQLITIDY_VALUE_GETTER_BEGIN sqlitidy::DbValue getValue(const std::string& name) const {
-#define SQLITIDY_VALUE_GETTER(field) if (name == #field) { return this->field; }
-#define SQLITIDY_VALUE_GETTER_END return sqlitidy::DbValue(); }
-
-#define SQLITIDY_VALUE_SETTER_BEGIN void setValue(const std::string& name, const sqlitidy::DbValue& value) {
-#define SQLITIDY_INT_VALUE_SETTER(field) if (name == #field) { \
-	assert(value.type == SQLITE_INTEGER); \
-	this->field = value.intValue; \
-	return; \
-}
-#define SQLITIDY_DOUBLE_VALUE_SETTER(field) if (name == #field) { \
-	assert(value.type == SQLITE_FLOAT); \
-	this->field = value.doubleValue; \
-	return; \
-}
-#define SQLITIDY_STRING_VALUE_SETTER(field) if (name == #field) { \
-	assert(value.type == SQLITE_TEXT); \
-	this->field = value.stringValue; \
-	return; \
-}
-#define SQLITIDY_VALUE_SETTER_END assert(false && "Invalid name"); \
-}
 
 template <typename ObjectT> bool DbContext::isExist(ObjectT& object) {
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "select count(" << ObjectT::keyName << ") from " << ObjectT::tableName
-	    << " where " << ObjectT::keyName << " = ?;";
+	sql << "select count(" << DbObjectTraits<ObjectT>::keyName << ") from " << DbObjectTraits<ObjectT>::tableName
+	    << " where " << DbObjectTraits<ObjectT>::keyName << " = ?;";
 
 	sqlite3_stmt* stmt = compile(sql.str());
-	bind(stmt, 1, object.getValue(ObjectT::keyName));
+	DbValue value;
+	DbObjectTraits<ObjectT>::call(GetValue, &object, &DbObjectTraits<ObjectT>::keyName, &value);
+	bind(stmt, 1, value);
 	assert(step(stmt) == SQLITE_ROW);
 
 	int count = ::sqlite3_column_int(stmt, 0);
@@ -122,21 +78,24 @@ template <typename ObjectT> bool DbContext::save(ObjectT& object) {
 
 	bool isUpdating = isExist(object);
 
+	std::vector<std::string> fieldNames;
+	DbObjectTraits<ObjectT>::call(GetFieldNames, &fieldNames);
+
 	std::ostringstream sql;
-	sql << "replace into " << ObjectT::tableName << " (";
-	for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
-		if (isUpdating || ObjectT::fieldNames[i] != ObjectT::keyName || !ObjectT::pkAutoInc) {
-			sql << ObjectT::fieldNames[i];
-			if (i != ObjectT::fieldNames.size() - 1) {
+	sql << "replace into " << DbObjectTraits<ObjectT>::tableName << " (";
+	for (unsigned i = 0; i < fieldNames.size(); i++) {
+		if (isUpdating || fieldNames[i] != DbObjectTraits<ObjectT>::keyName || !DbObjectTraits<ObjectT>::pkAutoInc) {
+			sql << fieldNames[i];
+			if (i != fieldNames.size() - 1) {
 				sql << ", ";
 			}
 		}
 	}
 	sql << ") values (";
-	for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
-		if (isUpdating || ObjectT::fieldNames[i] != ObjectT::keyName || !ObjectT::pkAutoInc) {
+	for (unsigned i = 0; i < fieldNames.size(); i++) {
+		if (isUpdating || fieldNames[i] != DbObjectTraits<ObjectT>::keyName || !DbObjectTraits<ObjectT>::pkAutoInc) {
 			sql << "?";
-			if (i != ObjectT::fieldNames.size() - 1) {
+			if (i != fieldNames.size() - 1) {
 				sql << ", ";
 			}
 		}
@@ -147,9 +106,11 @@ template <typename ObjectT> bool DbContext::save(ObjectT& object) {
 	assert(stmt);
 
 	int j = 1;
-	for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
-		if (isUpdating || ObjectT::fieldNames[i] != ObjectT::keyName || !ObjectT::pkAutoInc) {
-			bind(stmt, j, object.getValue(ObjectT::fieldNames[i]));
+	for (unsigned i = 0; i < fieldNames.size(); i++) {
+		if (isUpdating || fieldNames[i] != DbObjectTraits<ObjectT>::keyName || !DbObjectTraits<ObjectT>::pkAutoInc) {
+			DbValue value;
+			DbObjectTraits<ObjectT>::call(GetValue, &object, &fieldNames[i], &value);
+			bind(stmt, j, value);
 			j++;
 		}
 	}
@@ -157,9 +118,11 @@ template <typename ObjectT> bool DbContext::save(ObjectT& object) {
 	assert(step(stmt) == SQLITE_DONE);
 	::sqlite3_finalize(stmt);
 
-	DbValue key = object.getValue(ObjectT::keyName);
-	if (!isUpdating && key.type == SQLITE_INTEGER && ObjectT::pkAutoInc) {
-		object.setValue(ObjectT::keyName, DbValue(static_cast<int>(::sqlite3_last_insert_rowid(db))));
+	DbValue key;
+	DbObjectTraits<ObjectT>::call(GetValue, &object, &DbObjectTraits<ObjectT>::keyName, &key);
+	if (!isUpdating && key.type == SQLITE_INTEGER && DbObjectTraits<ObjectT>::pkAutoInc) {
+		DbValue lastId = static_cast<int>(::sqlite3_last_insert_rowid(db));
+		DbObjectTraits<ObjectT>::call(SetValue, &object, &DbObjectTraits<ObjectT>::keyName, &lastId);
 	}
 
 	return isUpdating;
@@ -169,17 +132,20 @@ template <typename ObjectT> bool DbContext::load(const DbValue& id, ObjectT& obj
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "select * from " << ObjectT::tableName
-	    << " where " << ObjectT::keyName << " = ?;";
+	sql << "select * from " << DbObjectTraits<ObjectT>::tableName
+	    << " where " << DbObjectTraits<ObjectT>::keyName << " = ?;";
 
 	sqlite3_stmt* stmt = compile(sql.str());
 	bind(stmt, 1, id);
 
+	std::vector<std::string> fieldNames;
+	DbObjectTraits<ObjectT>::call(GetFieldNames, &fieldNames);
+
 	bool isExist = step(stmt) == SQLITE_ROW;
 	if (isExist) {
-		for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
+		for (unsigned i = 0; i < fieldNames.size(); i++) {
 			DbValue value = extract(stmt, i);
-			object.setValue(ObjectT::fieldNames[i], value);
+			DbObjectTraits<ObjectT>::call(SetValue, &object, &fieldNames[i], &value);
 		}
 	}
 
@@ -191,11 +157,13 @@ template <typename ObjectT> void DbContext::remove(ObjectT& object) {
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "delete from " << ObjectT::tableName
-	    << " where " << ObjectT::keyName << " = ?;";
+	sql << "delete from " << DbObjectTraits<ObjectT>::tableName
+	    << " where " << DbObjectTraits<ObjectT>::keyName << " = ?;";
 
 	sqlite3_stmt* stmt = compile(sql.str());
-	bind(stmt, 1, object.getValue(ObjectT::keyName));
+	DbValue value;
+	DbObjectTraits<ObjectT>::call(GetValue, &object, &DbObjectTraits<ObjectT>::keyName, &value);
+	bind(stmt, 1, value);
 
 	assert(step(stmt) == SQLITE_DONE);
 	::sqlite3_finalize(stmt);
@@ -203,10 +171,13 @@ template <typename ObjectT> void DbContext::remove(ObjectT& object) {
 
 template <typename ObjectT> void DbContext::extractList(sqlite3_stmt* stmt, std::vector<ObjectT*>& list) {
 	while (step(stmt) == SQLITE_ROW) {
+		std::vector<std::string> fieldNames;
+	DbObjectTraits<ObjectT>::call(GetFieldNames, &fieldNames);
+
 		ObjectT* object = new ObjectT();
-		for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
+		for (unsigned i = 0; i < fieldNames.size(); i++) {
 			DbValue value = extract(stmt, i);
-			object->setValue(ObjectT::fieldNames[i], value);
+			DbObjectTraits<ObjectT>::call(SetValue, object, &fieldNames[i], &value);
 		}
 		list.push_back(object);
 	}
@@ -217,7 +188,7 @@ template <typename ObjectT, unsigned ParamCount> void DbContext::where(
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "select * from " << ObjectT::tableName
+	sql << "select * from " << DbObjectTraits<ObjectT>::tableName
 	    << " where " << clause << ";";
 
 	sqlite3_stmt* stmt = compile(sql.str());
@@ -237,7 +208,7 @@ template <typename ObjectT> void DbContext::all(std::vector<ObjectT*>& list) {
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "select * from " << ObjectT::tableName << ";";
+	sql << "select * from " << DbObjectTraits<ObjectT>::tableName << ";";
 
 	sqlite3_stmt* stmt = compile(sql.str());
 	extractList(stmt, list);
@@ -249,12 +220,16 @@ template <typename ObjectT> void DbContext::createTable() {
 	assert(db);
 
 	std::ostringstream sql;
-	sql << "create table " << ObjectT::tableName << " (";
+	sql << "create table " << DbObjectTraits<ObjectT>::tableName << " (";
+
+	std::vector<std::string> fieldNames;
+	DbObjectTraits<ObjectT>::call(GetFieldNames, &fieldNames);
 
 	ObjectT placeholder;
-	for (unsigned i = 0; i < ObjectT::fieldNames.size(); i++) {
-		sql << ObjectT::fieldNames[i];
-		DbValue value = placeholder.getValue(ObjectT::fieldNames[i]);
+	for (unsigned i = 0; i < fieldNames.size(); i++) {
+		sql << fieldNames[i];
+		DbValue value;
+		DbObjectTraits<ObjectT>::call(GetValue, &placeholder, &fieldNames[i], &value);
 		switch (value.type) {
 		case SQLITE_INTEGER: sql << " integer"; break;
 		case SQLITE_FLOAT: sql << " float"; break;
@@ -262,14 +237,14 @@ template <typename ObjectT> void DbContext::createTable() {
 		default:
 			assert(false && "column type not supported");
 		}
-		if (ObjectT::fieldNames[i] == ObjectT::keyName) {
+		if (fieldNames[i] == DbObjectTraits<ObjectT>::keyName) {
 			sql << " primary key";
-			if (ObjectT::pkAutoInc && value.type == SQLITE_INTEGER) {
+			if (DbObjectTraits<ObjectT>::pkAutoInc && value.type == SQLITE_INTEGER) {
 				sql << " autoincrement";
 			}
 		}
 		sql << " not null";
-		if (i != ObjectT::fieldNames.size() - 1) {
+		if (i != fieldNames.size() - 1) {
 			sql << ", ";
 		}
 	}
@@ -288,7 +263,7 @@ template <typename ObjectT> bool DbContext::isTableExist() {
 	std::string sql = "select count(*) from sqlite_master where type = 'table' and name = ?;";
 
 	sqlite3_stmt* stmt = compile(sql);
-	bind(stmt, 1, ObjectT::tableName);
+	bind(stmt, 1, DbObjectTraits<ObjectT>::tableName);
 	assert(step(stmt) == SQLITE_ROW);
 
 	int count = ::sqlite3_column_int(stmt, 0);
