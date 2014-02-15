@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "sqlitidy.h"
+#include "sqlitidy/sqlitidy.h"
 
 namespace sqlitidy {
 

@@ -2,7 +2,7 @@
 //
 
 #include "stdafx.h"
-#include "sqlitidy.h"
+#include <sqlitidy/sqlitidy.h>
 
 using namespace std;
 using namespace sqlitidy;

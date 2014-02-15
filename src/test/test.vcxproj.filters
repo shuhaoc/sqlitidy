@@ -20,7 +20,7 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\sqlitidy.h">
+    <ClInclude Include="..\..\include\sqlitidy\sqlitidy.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

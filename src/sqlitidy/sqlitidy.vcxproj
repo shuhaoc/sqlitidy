@@ -79,9 +79,10 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\db_value.h" />
-    <ClInclude Include="..\..\include\sqlitidy.h" />
-    <ClInclude Include="..\..\include\db_object_traits.h" />
+    <ClInclude Include="..\..\include\sqlite3.h" />
+    <ClInclude Include="..\..\include\sqlitidy\db_object_traits.h" />
+    <ClInclude Include="..\..\include\sqlitidy\db_value.h" />
+    <ClInclude Include="..\..\include\sqlitidy\sqlitidy.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>

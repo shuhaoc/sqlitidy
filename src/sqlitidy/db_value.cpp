@@ -1,8 +1,7 @@
 ﻿#include "stdafx.h"
 #include <cassert>
 #include <sqlite3.h>
-#include "db_value.h"
-
+#include "sqlitidy/db_value.h"
 
 namespace sqlitidy {
 
