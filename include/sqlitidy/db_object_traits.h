@@ -9,11 +9,11 @@ namespace sqlitidy {
 
 template <typename ObjectT> class DbObjectTraits {
 public:	
-	static const std::string tableName;
+	static std::string tableName;
 
-	static const std::string keyName;
+	static std::string keyName;
 
-	static const bool pkAutoInc;
+	static bool pkAutoInc;
 
 	static void call(int function, ...);
 };
@@ -24,9 +24,9 @@ enum { GetFieldNames, GetValue, SetValue };
 
 
 #define SQLITIDY_MAP_BEGIN(class_name, table_name, key_name, pk_auto_inc) \
-	const std::string DbObjectTraits<class_name>::tableName = table_name; \
-	const std::string DbObjectTraits<class_name>::keyName = key_name; \
-	const bool DbObjectTraits<class_name>::pkAutoInc = pk_auto_inc; \
+	std::string DbObjectTraits<class_name>::tableName = table_name; \
+	std::string DbObjectTraits<class_name>::keyName = key_name; \
+	bool DbObjectTraits<class_name>::pkAutoInc = pk_auto_inc; \
 	void DbObjectTraits<class_name>::call(int function, ...) { \
 		va_list list; \
 		va_start(list, function); \

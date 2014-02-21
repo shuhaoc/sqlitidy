@@ -34,6 +34,8 @@ template <typename Container> void deleteContainer(const Container& container) {
 }
 
 int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
+	DbObjectTraits<User>::tableName = "tb_user_1";
+
 	DbContext ctx("test.db");
 	if (!ctx.isTableExist<User>()) {
 		ctx.createTable<User>();
