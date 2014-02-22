@@ -37,4 +37,6 @@ private:
 	void assign(const DbValue& value);
 };
 
+std::ostream& operator << (std::ostream& os, const DbValue& value);
+
 } // namespace sqlitidy

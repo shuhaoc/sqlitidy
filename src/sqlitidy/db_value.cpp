@@ -35,4 +35,21 @@ void DbValue::assign(const DbValue& value) {
 	}
 }
 
+std::ostream& operator << (std::ostream& os, const DbValue& value) {
+	switch (value.type) {
+	case SQLITE_INTEGER:
+		os << value.intValue;
+		break;
+	case SQLITE_FLOAT:
+		os << value.doubleValue;
+		break;
+	case SQLITE_TEXT:
+		os << value.stringValue;
+		break;
+	default:
+		assert(false && "Invalid value type");
+	}
+	return os;
+}
+
 } // namespace sqlitidy

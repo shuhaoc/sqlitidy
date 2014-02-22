@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "db_value.h"
 
@@ -16,9 +17,27 @@ public:
 	static bool pkAutoInc;
 
 	static void call(int function, ...);
+
+	static std::string toString(const ObjectT& object);
 };
 
 enum { GetFieldNames, GetValue, SetValue };
+
+
+template <typename ObjectT> std::string DbObjectTraits<ObjectT>::toString(const ObjectT& object) {
+	std::ostringstream oss;
+	std::vector<std::string> fieldNames;
+	DbObjectTraits<ObjectT>::call(GetFieldNames, &fieldNames);
+	for (unsigned i = 0; i < fieldNames.size(); i++) {
+		DbValue value;
+		DbObjectTraits<ObjectT>::call(GetValue, &object, &fieldNames[i], &value);
+		oss << fieldNames[i] << " = " << value;
+		if (i != fieldNames.size() - 1) {
+			oss << ", ";
+		}
+	}
+	return oss.str();
+}
 
 } // namespace sqlitidy
 
@@ -51,4 +70,5 @@ enum { GetFieldNames, GetValue, SetValue };
 		if (*name == #field_name) { object->field_name = *value; } \
 	}
 
-#define SQLITIDY_MAP_END va_end(list); }
+#define SQLITIDY_MAP_END va_end(list); \
+}

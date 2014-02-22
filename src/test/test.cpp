@@ -43,7 +43,8 @@ int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 	User u;
 	cin >> u.id >> u.name >> u.age >> u.height;
 	ctx.save(u);
-	cout << u.id << u.name << u.age << u.height << endl;
+	//cout << u.id << u.name << u.age << u.height << endl;
+	cout << DbObjectTraits<User>::toString(u) << endl;
 	User u2;
 	ctx.load(u.id, u2);
 	cout << u2.id << u2.name << u2.age << u.height << endl;
