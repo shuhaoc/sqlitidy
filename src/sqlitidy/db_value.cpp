@@ -44,7 +44,7 @@ std::ostream& operator << (std::ostream& os, const DbValue& value) {
 		os << value.doubleValue;
 		break;
 	case SQLITE_TEXT:
-		os << value.stringValue;
+		os << "\"" << value.stringValue << "\"";
 		break;
 	default:
 		assert(false && "Invalid value type");
