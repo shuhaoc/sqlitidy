@@ -40,6 +40,7 @@ int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 	if (!ctx.isTableExist<User>()) {
 		ctx.createTable<User>();
 	}
+	ctx.execute("begin transaction");
 	User u;
 	cin >> u.id >> u.name >> u.age >> u.height;
 	ctx.save(u);
@@ -58,6 +59,7 @@ int _tmain(int /*argc*/, _TCHAR* /*argv*/[]) {
 		cout << u->id << u->name << u->age << u->height << endl;
 	});
 	ctx.remove(u);
+	ctx.execute("commit transaction");
 	deleteContainer(ul);
 	return 0;
 }

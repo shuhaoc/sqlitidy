@@ -21,6 +21,8 @@ public:
 
 	~DbContext();
 
+	void execute(const std::string& sql);
+
 	template <typename ObjectT> void createTable();
 
 	template <typename ObjectT> bool isTableExist();

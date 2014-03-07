@@ -12,6 +12,10 @@ DbContext::~DbContext() {
 	::sqlite3_close(db);
 }
 
+void DbContext::execute(const std::string& sql) {
+	::sqlite3_exec(db, sql.c_str(), NULL, NULL, NULL);
+}
+
 void DbContext::bind(sqlite3_stmt* stmt, int i, const DbValue& value) {
 	int ec = SQLITE_OK;
 	switch (value.type) {
